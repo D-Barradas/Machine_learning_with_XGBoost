@@ -25,22 +25,33 @@ def load(file_name):
 
 def load_data(file_name):
     features = ["AP_DFIRE2", "AP_PISA" ,"AP_T1", "AP_T2", "CP_MJ3h" ,"SIPPER", "ELE", "VDW", "PYDOCK_TOT", "AP_dDFIRE"]
+    print (f"Loading data from {file_name}")
     folder = os.listdir(file_name)
+
     my_dataframes = []
-    for f in folder: 
-        df_temp = pd.read_csv(f"../data/results_LD_v2/{f}",index_col="Conf") 
+    for f in folder:
+        print (f"Loading data from {f}")
+        df_temp = pd.read_csv(f"{file_name}/{f}",index_col="Conf") 
         df_temp["BM_ID"] = f[0:4]
         my_dataframes.append(df_temp)
     data_LD = pd.concat(my_dataframes)
     return data_LD[features],data_LD["BM_ID"] 
 
-ld_pd,df_id_list = load_data("../data/results_LD_v2/")
+# create a funtion to get the current working directory one level up
+def getcwd_up():
+    cwd = os.getcwd()
+    #print(f"Current working directory: {cwd}")
+    return cwd
+
+
+mydir = getcwd_up()
+ld_pd,df_id_list = load_data(f"{mydir}/data/results_LD_v3/")
 index=ld_pd.index
 
 
-classifer = "../models/Xgboost_LD_hp3_LD.sav"
+classifer = f"{mydir}/models/Xgboost_LD_hp3_LD.sav"
 my_cls = load(classifer)
-scaler = "../models/scaler_LD_BM4_all_features.sav"
+scaler = f"{mydir}/models/scaler_LD_BM4_all_features.sav"
 scaler = load(scaler)
 
 ld_pd = scaler.transform(ld_pd)
@@ -55,5 +66,5 @@ probability.columns = ["Proba_incorrect","Proba_correct"]
 
 results = pd.concat([predictions,probability,df_id_list],axis=1)
 #.to_csv("../data/results_LD_v2/predictions_Xgboost_LD_hp3_LD.csv")
-results.to_csv("../results/predictions_Xgboost_LD_hp3_LD.csv")
-print ( results.sort_values(by="BM_ID").head(n=10) ) 
+results.to_csv(f"{mydir}/results/predictions_Xgboost_LD_hp3_LD_v3.csv")
+print ( results.sort_values(by=["BM_ID","Proba_correct"],ascending=False).head(n=10) ) 
